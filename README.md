@@ -220,8 +220,10 @@ ArcFace обучался стабильнее и формировал более
 
 Triplet Loss оказался лучшим по closed-set classification accuracy и продемонстрировал наиболее качественную separability embedding space.
 
-![Loss curves](assets/readme/CE_Arcface_triplet_loss.png)
-![Accuracy curves](assets/readme/CE_Arcface_triplet_acc.png)
+<p align="center">
+  <img src="assets/readme/CE_Arcface_triplet_loss.png" width="48%">
+  <img src="assets/readme/CE_Arcface_triplet_acc.png" width="48%">
+</p>
 
 ### Hybrid Losses
 
@@ -306,7 +308,7 @@ Pipeline поддерживает:
 
 Интересный результат экспериментов:
 
->лучшая validation accuracy не совпала с лучшей verification-метрикой.
+> лучшая validation accuracy не совпала с лучшей verification-метрикой.
 
 ## Unexpected Result
 
@@ -503,4 +505,4 @@ python scripts/evaluate_ir.py \
 
 Главный вывод экспериментов:
 
->качество face recognition определяется не только backbone-моделью, но и всей геометрией пайплайна — от landmark detection до структуры embedding space и способа evaluation.
+> качество face recognition определяется не только backbone-моделью, но и всей геометрией пайплайна — от landmark detection до структуры embedding space и способа evaluation.
