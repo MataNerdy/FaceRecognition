@@ -6,8 +6,13 @@ import itertools
 from typing import Iterable
 
 import numpy as np
-import torch
-import torch.nn.functional as F
+
+try:
+    import torch
+    import torch.nn.functional as F
+except ModuleNotFoundError:  # pragma: no cover - exercised only in minimal envs
+    torch = None
+    F = None
 
 
 def _unpack_batch(batch):
@@ -16,21 +21,23 @@ def _unpack_batch(batch):
     return batch[:2]
 
 
-@torch.no_grad()
 def compute_embeddings(model: torch.nn.Module, dataloader: Iterable, device: torch.device | str) -> tuple[np.ndarray, np.ndarray]:
     """Compute L2-normalized embeddings and labels for a dataloader."""
+    if torch is None or F is None:
+        raise ModuleNotFoundError("torch is required to compute model embeddings")
     model.eval()
     embeddings: list[np.ndarray] = []
     labels: list[np.ndarray] = []
 
-    for batch in dataloader:
-        images, target = _unpack_batch(batch)
-        images = images.to(device)
-        output = model(images)
-        embedding = output[1] if isinstance(output, tuple) else output
-        embeddings.append(F.normalize(embedding, dim=1).cpu().numpy())
-        if target is not None:
-            labels.append(torch.as_tensor(target).cpu().numpy())
+    with torch.no_grad():
+        for batch in dataloader:
+            images, target = _unpack_batch(batch)
+            images = images.to(device)
+            output = model(images)
+            embedding = output[1] if isinstance(output, tuple) else output
+            embeddings.append(F.normalize(embedding, dim=1).cpu().numpy())
+            if target is not None:
+                labels.append(torch.as_tensor(target).cpu().numpy())
 
     if not embeddings:
         raise ValueError("Dataloader produced no batches")
@@ -85,7 +92,8 @@ def compute_ir(
 
 def triplet_accuracy(anchor: torch.Tensor, positive: torch.Tensor, negative: torch.Tensor, margin: float = 0.3) -> float:
     """Return the share of triplets where positive is closer than negative by margin."""
+    if torch is None:
+        raise ModuleNotFoundError("torch is required to compute triplet accuracy")
     pos_dist = torch.norm(anchor - positive, dim=1)
     neg_dist = torch.norm(anchor - negative, dim=1)
     return float(((pos_dist + margin) < neg_dist).float().mean().item())
-

@@ -1,3 +1,18 @@
+Metadata-Version: 2.4
+Name: face-recognition-pipeline
+Version: 0.1.0
+Summary: PyTorch face recognition pipeline with landmarks, alignment, metric learning and Identification Rate evaluation
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: torch>=2.2
+Requires-Dist: torchvision>=0.17
+Requires-Dist: numpy>=1.26
+Requires-Dist: matplotlib>=3.8
+Requires-Dist: opencv-python>=4.8
+Requires-Dist: Pillow>=10.0
+Requires-Dist: scikit-learn>=1.3
+Requires-Dist: tqdm>=4.66
+
 # Face Recognition Pipeline
 
 Учебно-исследовательский ML/CV-проект на PyTorch: пайплайн распознавания лиц от предсказания facial landmarks и alignment до обучения embedding-моделей, сравнения loss-функций и verification-style оценки через Identification Rate. Проект не использует pretrained face-recognition модели; ImageNet backbone применялся только как стартовая инициализация CNN.

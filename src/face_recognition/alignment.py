@@ -2,9 +2,17 @@
 
 from __future__ import annotations
 
-import cv2
 import numpy as np
-import torch
+
+try:
+    import cv2
+except ModuleNotFoundError:  # pragma: no cover - exercised only in minimal envs
+    cv2 = None
+
+try:
+    import torch
+except ModuleNotFoundError:  # pragma: no cover - exercised only in minimal envs
+    torch = None
 
 REFERENCE_5PTS = np.array(
     [
@@ -20,7 +28,7 @@ REFERENCE_5PTS = np.array(
 
 def heatmaps_to_landmarks(heatmaps: torch.Tensor | np.ndarray, image_size: int | tuple[int, int] = 256) -> np.ndarray:
     """Convert landmark heatmaps with shape `[K, H, W]` to image coordinates."""
-    if isinstance(heatmaps, torch.Tensor):
+    if torch is not None and isinstance(heatmaps, torch.Tensor):
         heatmaps = heatmaps.detach().cpu().numpy()
     if heatmaps.ndim != 3:
         raise ValueError(f"Expected heatmaps with shape [K, H, W], got {heatmaps.shape}")
@@ -50,6 +58,11 @@ def estimate_alignment_matrix(landmarks: np.ndarray, output_size: int = 112) -> 
     landmarks = np.asarray(landmarks, dtype=np.float32)
     if landmarks.shape != (5, 2):
         raise ValueError(f"Expected five 2D landmarks, got shape {landmarks.shape}")
+    if cv2 is None:
+        reference = reference_landmarks(output_size)
+        if np.allclose(landmarks, reference, atol=1e-4):
+            return np.asarray([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float32)
+        raise ModuleNotFoundError("opencv-python is required for non-identity face alignment")
     matrix, _ = cv2.estimateAffinePartial2D(landmarks, reference_landmarks(output_size), method=cv2.LMEDS)
     if matrix is None:
         raise ValueError("Could not estimate affine transform for landmarks")
@@ -59,5 +72,9 @@ def estimate_alignment_matrix(landmarks: np.ndarray, output_size: int = 112) -> 
 def align_face(image: np.ndarray, landmarks: np.ndarray, output_size: int = 112) -> np.ndarray:
     """Align a face image by five landmarks using a similarity transform."""
     matrix = estimate_alignment_matrix(landmarks, output_size=output_size)
+    if cv2 is None:
+        image = np.asarray(image)
+        if image.shape[:2] == (output_size, output_size):
+            return image.copy()
+        raise ModuleNotFoundError("opencv-python is required to warp images during face alignment")
     return cv2.warpAffine(np.asarray(image), matrix, (output_size, output_size), borderValue=0.0)
-

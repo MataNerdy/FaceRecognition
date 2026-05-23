@@ -60,3 +60,53 @@ class ArcFaceCELoss(nn.Module):
         arc_loss = self.arcface_loss(embeddings, labels)
         return self.ce_weight * ce_loss + self.arcface_weight * arc_loss
 
+
+
+def mine_triplets_from_batch(embeddings: torch.Tensor, labels: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor] | None:
+    """Create simple in-batch triplets, returning None when the batch is unsuitable."""
+    anchors = []
+    positives = []
+    negatives = []
+    labels = labels.detach()
+    for index, label in enumerate(labels):
+        positive_indices = torch.nonzero((labels == label) & (torch.arange(labels.numel(), device=labels.device) != index), as_tuple=False).flatten()
+        negative_indices = torch.nonzero(labels != label, as_tuple=False).flatten()
+        if positive_indices.numel() == 0 or negative_indices.numel() == 0:
+            continue
+        anchors.append(embeddings[index])
+        positives.append(embeddings[positive_indices[0]])
+        negatives.append(embeddings[negative_indices[0]])
+    if not anchors:
+        return None
+    return torch.stack(anchors), torch.stack(positives), torch.stack(negatives)
+
+
+class ArcFaceTripletLoss(nn.Module):
+    """Weighted ArcFace plus in-batch Triplet loss.
+
+    If the batch does not contain at least one positive and one negative pair for
+    triplet mining, the loss falls back to ArcFace only.
+    """
+
+    def __init__(
+        self,
+        arcface_loss: ArcFaceLoss,
+        triplet_loss: TripletLoss | None = None,
+        arcface_weight: float = 1.0,
+        triplet_weight: float = 1.0,
+    ) -> None:
+        super().__init__()
+        self.arcface_loss = arcface_loss
+        self.triplet_loss = triplet_loss or TripletLoss()
+        self.arcface_weight = arcface_weight
+        self.triplet_weight = triplet_weight
+
+    def forward(self, embeddings: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+        """Return weighted ArcFace plus Triplet loss for one batch."""
+        arc_loss = self.arcface_loss(embeddings, labels)
+        triplets = mine_triplets_from_batch(embeddings, labels)
+        if triplets is None or self.triplet_weight == 0:
+            return self.arcface_weight * arc_loss
+        anchor, positive, negative = triplets
+        tri_loss = self.triplet_loss(anchor, positive, negative)
+        return self.arcface_weight * arc_loss + self.triplet_weight * tri_loss

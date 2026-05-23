@@ -19,7 +19,7 @@ try:
     from tqdm import tqdm
 
     from face_recognition.datasets import TripletDatasetFromFolder, default_face_transform
-    from face_recognition.losses import ArcFaceCELoss, ArcFaceLoss, TripletLoss
+    from face_recognition.losses import ArcFaceCELoss, ArcFaceLoss, ArcFaceTripletLoss, TripletLoss
     from face_recognition.metrics import triplet_accuracy
     from face_recognition.models.embedding import EmbeddingNet, FaceClassifier
 except ModuleNotFoundError as exc:  # Allows importing the script without ML dependencies installed.
@@ -32,6 +32,7 @@ except ModuleNotFoundError as exc:  # Allows importing the script without ML dep
     default_face_transform = None
     ArcFaceCELoss = None
     ArcFaceLoss = None
+    ArcFaceTripletLoss = None
     TripletLoss = None
     triplet_accuracy = None
     EmbeddingNet = None
@@ -68,7 +69,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train face recognition models on aligned ImageFolder data")
     parser.add_argument("--data-dir", type=Path, required=True, help="ImageFolder with aligned training faces")
     parser.add_argument("--val-dir", type=Path, help="Optional ImageFolder validation split")
-    parser.add_argument("--loss", choices=["ce", "arcface", "hybrid", "triplet"], default="ce")
+    parser.add_argument("--loss", choices=["ce", "arcface", "hybrid", "triplet", "arcface_triplet"], default="ce")
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-4)
@@ -76,6 +77,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--embedding-dim", type=int, default=512)
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--num-workers", type=int, default=2)
+    parser.add_argument("--arcface-weight", type=float, default=1.0)
+    parser.add_argument("--triplet-weight", type=float, default=1.0)
+    parser.add_argument("--triplet-margin", type=float, default=0.3)
     parser.add_argument("--no-pretrained", action="store_true", help="Disable ImageNet initialization")
     parser.add_argument("--output-dir", type=Path, default=Path("checkpoints"))
     parser.add_argument("--device", default=default_device())
@@ -105,8 +109,10 @@ def train_epoch(model, loader, criterion, optimizer, device: str, mode: str, arc
                 loss = criterion(logits, labels)
             elif mode == "arcface":
                 loss = arcface(embeddings, labels)
-            else:
+            elif mode == "hybrid":
                 loss = criterion(logits, embeddings, labels)
+            else:
+                loss = criterion(embeddings, labels)
             total_correct += (logits.argmax(dim=1) == labels).sum().item()
             total_items += labels.numel()
 
@@ -139,8 +145,10 @@ def evaluate(model, loader, criterion, device: str, mode: str, arcface=None) -> 
                 loss = criterion(logits, labels)
             elif mode == "arcface":
                 loss = arcface(embeddings, labels)
-            else:
+            elif mode == "hybrid":
                 loss = criterion(logits, embeddings, labels)
+            else:
+                loss = criterion(embeddings, labels)
             total_correct += (logits.argmax(dim=1) == labels).sum().item()
             total_items += labels.numel()
         total_loss += float(loss.item()) * batch_size if mode == "triplet" else float(loss.item()) * labels.numel()
@@ -158,7 +166,7 @@ def main() -> None:
         train_dataset = TripletDatasetFromFolder(args.data_dir, transform=transform)
         val_dataset = TripletDatasetFromFolder(args.val_dir, transform=transform) if args.val_dir else None
         model = EmbeddingNet(args.embedding_dim, pretrained=not args.no_pretrained, dropout=args.dropout).to(args.device)
-        criterion = TripletLoss(margin=0.3)
+        criterion = TripletLoss(margin=args.triplet_margin)
         arcface = None
     else:
         train_dataset = ImageFolder(args.data_dir, transform=transform)
@@ -169,8 +177,15 @@ def main() -> None:
             criterion = nn.CrossEntropyLoss()
         elif args.loss == "arcface":
             criterion = arcface
+        elif args.loss == "hybrid":
+            criterion = ArcFaceCELoss(arcface, ce_weight=1.0, arcface_weight=args.arcface_weight)
         else:
-            criterion = ArcFaceCELoss(arcface, ce_weight=1.0, arcface_weight=1.0)
+            criterion = ArcFaceTripletLoss(
+                arcface,
+                TripletLoss(margin=args.triplet_margin),
+                arcface_weight=args.arcface_weight,
+                triplet_weight=args.triplet_weight,
+            )
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers) if val_dataset else None
