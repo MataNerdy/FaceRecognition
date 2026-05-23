@@ -2,6 +2,8 @@
 
 В пятом исследовательском ноутбуке были проверены готовые open-source библиотеки для face recognition: DeepFace, InsightFace и `face_recognition` на базе dlib. Это сравнение не является частью основного pipeline, а служит sanity-check и исследовательским baseline: важно понимать, как ведут себя готовые решения и какие trade-off возникают при их использовании.
 
+Эти зависимости вынесены в `requirements-research.txt`, потому что основной CLI-пайплайн не использует TensorFlow, DeepFace, InsightFace или ONNX. Core project ставится через `requirements.txt` и остается на PyTorch stack.
+
 ## Что проверялось
 
 - **DeepFace**: удобный high-level API, поддержка нескольких моделей, включая ArcFace, простое извлечение лиц и embeddings.

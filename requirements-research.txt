@@ -1,0 +1,19 @@
+# Optional research / notebook dependencies.
+# Keep these out of the core install: DeepFace and InsightFace pull TensorFlow,
+# ONNX and runtime packages that are not required by the project CLI scripts.
+
+-r requirements.txt
+
+pandas==2.2.2
+jupyter==1.0.0
+notebook==7.2.1
+ipykernel==6.29.5
+
+# External-library comparison notebook.
+deepface==0.0.93
+tensorflow==2.16.1
+ml-dtypes==0.3.2
+
+insightface==0.7.3
+onnxruntime==1.17.3
+onnx==1.16.1

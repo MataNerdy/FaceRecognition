@@ -141,8 +141,17 @@ Identification Rate / TPR@FPR:
 Установить зависимости:
 
 ```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 pip install -e .
+```
+
+Для research notebooks и сравнения с DeepFace/InsightFace зависимости ставятся отдельно:
+
+```bash
+pip install -r requirements-research.txt
 ```
 
 Посмотреть сохраненную IR-таблицу:
@@ -194,7 +203,7 @@ python scripts/evaluate_ir.py \
 
 ## External libraries
 
-В отдельном исследовательском ноутбуке проверялись DeepFace, InsightFace и `face_recognition`/dlib. Это sanity-check и research baseline, а не часть основного результата: финальные метрики проекта получены без pretrained face-recognition моделей. Подробности вынесены в [`docs/external_libraries.md`](docs/external_libraries.md).
+В отдельном исследовательском ноутбуке проверялись DeepFace, InsightFace и `face_recognition`/dlib. Это sanity-check и research baseline, а не часть основного результата: финальные метрики проекта получены без pretrained face-recognition моделей. Эти библиотеки не входят в core install и ставятся через `requirements-research.txt`. Подробности вынесены в [`docs/external_libraries.md`](docs/external_libraries.md).
 
 ## Notebook coverage
 
@@ -215,4 +224,3 @@ python scripts/evaluate_ir.py \
 - Проверить ArcFace на большем числе identity и более длинном обучении.
 - Добавить тесты для alignment, метрик и загрузчиков данных.
 - Сохранить легкие demo-assets вместо полных notebook outputs.
-

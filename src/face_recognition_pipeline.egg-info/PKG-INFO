@@ -2,16 +2,17 @@ Metadata-Version: 2.4
 Name: face-recognition-pipeline
 Version: 0.1.0
 Summary: PyTorch face recognition pipeline with landmarks, alignment, metric learning and Identification Rate evaluation
-Requires-Python: >=3.10
+Requires-Python: <3.13,>=3.10
 Description-Content-Type: text/markdown
-Requires-Dist: torch>=2.2
-Requires-Dist: torchvision>=0.17
-Requires-Dist: numpy>=1.26
-Requires-Dist: matplotlib>=3.8
-Requires-Dist: opencv-python>=4.8
-Requires-Dist: Pillow>=10.0
-Requires-Dist: scikit-learn>=1.3
-Requires-Dist: tqdm>=4.66
+Requires-Dist: torch==2.2.2
+Requires-Dist: torchvision==0.17.2
+Requires-Dist: numpy==1.26.4
+Requires-Dist: matplotlib==3.8.4
+Requires-Dist: opencv-python==4.9.0.80
+Requires-Dist: Pillow==10.4.0
+Requires-Dist: scikit-learn==1.4.2
+Requires-Dist: tqdm==4.66.4
+Requires-Dist: facenet-pytorch==2.5.3
 
 # Face Recognition Pipeline
 
@@ -156,8 +157,17 @@ Identification Rate / TPR@FPR:
 Установить зависимости:
 
 ```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 pip install -e .
+```
+
+Для research notebooks и сравнения с DeepFace/InsightFace зависимости ставятся отдельно:
+
+```bash
+pip install -r requirements-research.txt
 ```
 
 Посмотреть сохраненную IR-таблицу:
@@ -209,7 +219,7 @@ python scripts/evaluate_ir.py \
 
 ## External libraries
 
-В отдельном исследовательском ноутбуке проверялись DeepFace, InsightFace и `face_recognition`/dlib. Это sanity-check и research baseline, а не часть основного результата: финальные метрики проекта получены без pretrained face-recognition моделей. Подробности вынесены в [`docs/external_libraries.md`](docs/external_libraries.md).
+В отдельном исследовательском ноутбуке проверялись DeepFace, InsightFace и `face_recognition`/dlib. Это sanity-check и research baseline, а не часть основного результата: финальные метрики проекта получены без pretrained face-recognition моделей. Эти библиотеки не входят в core install и ставятся через `requirements-research.txt`. Подробности вынесены в [`docs/external_libraries.md`](docs/external_libraries.md).
 
 ## Notebook coverage
 
@@ -230,4 +240,3 @@ python scripts/evaluate_ir.py \
 - Проверить ArcFace на большем числе identity и более длинном обучении.
 - Добавить тесты для alignment, метрик и загрузчиков данных.
 - Сохранить легкие demo-assets вместо полных notebook outputs.
-
