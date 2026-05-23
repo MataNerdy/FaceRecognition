@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Jupyter / OS
+.ipynb_checkpoints/
+.DS_Store
+
+# Data and model artifacts
+data/
+!data/
+data/*
+!data/README.md
+!data/.gitkeep
+
+checkpoints/
+!checkpoints/
+checkpoints/*
+!checkpoints/README.md
+!checkpoints/.gitkeep
+
+*.pth
+*.pt
+*.ckpt
+*.zip
+
+# Local experiment outputs
+runs/
+outputs/
+wandb/
+mlruns/
+

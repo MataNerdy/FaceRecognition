@@ -1,108 +1,97 @@
 # Face Recognition Pipeline
 
-End-to-end проект по распознаванию лиц на PyTorch: от поиска ключевых точек лица и выравнивания до обучения embedding-моделей, сравнения loss-функций и оценки качества через Identification Rate / TPR@FPR.
+Учебно-исследовательский ML/CV-проект на PyTorch: пайплайн распознавания лиц от предсказания facial landmarks и alignment до обучения embedding-моделей, сравнения loss-функций и verification-style оценки через Identification Rate. Проект не использует pretrained face-recognition модели; ImageNet backbone применялся только как стартовая инициализация CNN.
 
-Проект собран из пяти исследовательских ноутбуков и оформлен в репозиторий с воспроизводимой структурой, скриптами, моделями и визуализациями.
+![Pipeline](assets/readme/pipeline_landmarks.png)
 
-![Pipeline example](assets/3_FaceRecognitionPipeline_Clean_cell18_out0.png)
+## Situation
 
----
+После серии экспериментов в Colab проект накопил несколько ноутбуков, промежуточные веса, архивы датасетов и разрозненные визуализации. При этом внутри уже была полноценная исследовательская работа: landmark detector, face alignment, классификация лиц, metric learning и отдельная оценка на unseen identities.
+
+## Task
+
+Цель проекта — собрать аккуратный end-to-end face recognition pipeline, который показывает не только финальную accuracy, но и инженерную логику решения: подготовку лиц, обучение разных моделей, сравнение функций потерь и проверку качества в сценарии, близком к verification/retrieval.
+
+## Action
+
+Был реализован Stacked Hourglass Network для пяти ключевых точек лица: левый глаз, правый глаз, нос, левый угол рта и правый угол рта. По предсказанным landmarks выполняется similarity alignment, после чего выровненные лица используются для обучения классификатора и embedding-моделей.
+
+Дальше были обучены и сравнены несколько подходов: CrossEntropy, ArcFace, Hybrid loss и Triplet Loss. Для честной проверки обобщения добавлена Identification Rate / TPR@FPR оценка на query и distractor наборах, состоящих из identity, не использованных при обучении.
+
+![Alignment](assets/readme/alignment_examples.png)
+
+## Result
+
+В классификационном эксперименте по validation accuracy лучшим оказался Triplet-подход: около `0.87`, тогда как CE, ArcFace и Hybrid держались около `0.72-0.74`. Эти значения подтверждаются исследовательским ноутбуком `notebooks/legacy/Faces_CE_72_ArcFace_73_Hybrid_73_Triplet_85.ipynb`.
+
+В отдельной verification-style оценке через Identification Rate лучшей стала CE-модель при `TPR@FPR=0.50`: `0.8678`. Triplet в этой метрике дал `0.7215`, ArcFace — `0.6393`, CE+ArcFace — `0.7172`, ArcFace+Triplet — `0.7192`. Поэтому в проекте явно разделены две метрики: validation accuracy для закрытой классификации и IR для открытого набора identity.
+
+![Identification Rate](assets/readme/identification_rate.png)
 
 ## Что реализовано
 
-### 1. Landmark detection и face alignment
+- Stacked Hourglass Network для предсказания facial landmarks.
+- Face alignment по пяти ключевым точкам через affine/similarity transform.
+- Подготовка aligned faces для последующего распознавания.
+- Обучение классификатора лиц на выровненных изображениях.
+- Embedding-модели и сравнение CrossEntropy, ArcFace, Hybrid и Triplet Loss.
+- Identification Rate / TPR@FPR для verification-style evaluation.
+- CLI-скрипты для обучения landmark detector, классификатора и IR-оценки.
 
-Реализована и обучена **Stacked Hourglass Network** для предсказания 5 ключевых точек лица:
+## Архитектура пайплайна
 
-- левый глаз;
-- правый глаз;
-- нос;
-- левый угол рта;
-- правый угол рта.
+```text
+raw image
+  -> facial landmark detector (Stacked Hourglass)
+  -> five keypoints
+  -> face alignment
+  -> aligned face crop
+  -> CNN encoder / embedding model
+  -> cosine similarity / classifier logits
+  -> identification or verification-style decision
+```
 
-На основе предсказанных landmarks реализовано выравнивание лица через affine/similarity transform. Это используется как второй этап классического face recognition pipeline.
+Ключевая идея: качество распознавания зависит не только от classifier head, но и от стабильности предобработки. Ошибка в landmarks ухудшает alignment, а плохой alignment напрямую портит embedding-пространство.
 
-Ключевые файлы:
+## Модели и loss-функции
 
-- `src/face_recognition/models/hourglass.py`
-- `src/face_recognition/alignment.py`
-- `notebooks/1_StackedHourGlassNetwork_Clean.ipynb`
+`StackedHourglassNet` предсказывает heatmaps ключевых точек. Для распознавания используется ResNet50-based encoder с L2-normalized embedding head и optional classification head.
 
----
-
-### 2. Обучение моделей распознавания лиц
-
-Для распознавания лиц обучены модели на выровненных изображениях CelebA. В качестве backbone использовалась CNN-модель, предобученная на ImageNet, но не предобученная на face recognition.
-
-Протестированы варианты:
-
-| Подход | Что проверялось |
+| Подход | Роль в эксперименте |
 |---|---|
-| CrossEntropy | базовая классификация identity |
-| ArcFace | angular margin loss для более разделимых embedding-векторов |
-| Triplet Loss | обучение embedding-пространства по тройкам anchor-positive-negative |
-| CE + ArcFace | гибридный loss |
-| ArcFace + Triplet | гибрид margin-based и metric learning подходов |
+| CrossEntropy | сильный baseline для закрытой классификации identity |
+| ArcFace | angular margin loss для более разделимых embeddings |
+| CE + ArcFace | гибрид классификационного и angular-margin обучения |
+| Triplet Loss | metric learning: anchor ближе к positive, дальше от negative |
+| ArcFace + Triplet | комбинированный эксперимент margin-based и metric learning |
 
-Ключевые файлы:
+![Training Curves](assets/readme/training_curves.png)
 
-- `src/face_recognition/models/embedding.py`
-- `src/face_recognition/losses.py`
-- `src/face_recognition/datasets.py`
-- `notebooks/2_AllModels_Clean (1).ipynb`
+## Метрики
 
----
+Использовались две группы метрик:
 
-### 3. End-to-end pipeline
+- validation accuracy / top-k accuracy для классификации известных identity;
+- Identification Rate, то есть `TPR@FPR`, для проверки качества на unseen identity с query/distractor split.
 
-Собран полный pipeline:
+Identification Rate важнее обычной accuracy для открытого сценария face recognition: модель должна работать с людьми, которых не было в train/val, а не только выбирать один из известных классов.
 
-1. найти лица на изображении;
-2. получить landmarks;
-3. выровнять найденные лица;
-4. пропустить лица через embedding model;
-5. сравнить embeddings через cosine similarity и L2 distance.
+## Результаты
 
-![Aligned faces](assets/3_FaceRecognitionPipeline_Clean_cell10_out0.png)
+Классификационное сравнение из ноутбуков:
 
-Ключевые файлы:
-
-- `notebooks/3_FaceRecognitionPipeline_Clean.ipynb`
-- `src/face_recognition/metrics.py`
-- `src/face_recognition/utils/visualization.py`
-
----
-
-### 4. Identification Rate Metric
-
-Accuracy хорошо работает для закрытой классификации по известным identity, но плохо отражает качество модели на новых людях, которых не было в train/val.
-
-Поэтому дополнительно реализована метрика **Identification Rate / TPR@FPR**:
-
-- `query` содержит identity, не использовавшиеся при обучении;
-- `distractors` содержит другие unseen identity;
-- считаются cosine similarities для positive pairs, negative pairs и query-distractor pairs;
-- по заданному FPR выбирается threshold;
-- измеряется TPR.
-
-Для оценки было подготовлено:
-
-| Split | Количество лиц |
+| Model | Validation accuracy |
 |---|---:|
-| Query | 812 |
-| Distractors | 617 |
+| CrossEntropy | 0.7277 |
+| ArcFace | 0.7267 |
+| Triplet Loss | 0.8723 |
+| CE + ArcFace | 0.7307 |
+| ArcFace + Triplet 1:1 | 0.7437 |
+| ArcFace + Triplet 2:1 | 0.7417 |
 
-Ключевой файл:
+Identification Rate / TPR@FPR:
 
-- `notebooks/4_Identification_Rate_Metric_Clean.ipynb`
-
----
-
-## Лучший результат
-
-По задаче **Identification Rate** лучшей оказалась модель, обученная на **CrossEntropy**.
-
-| Model | TPR@FPR=0.50 | TPR@FPR=0.20 | TPR@FPR=0.10 | TPR@FPR=0.05 |
+| Model | FPR=0.50 | FPR=0.20 | FPR=0.10 | FPR=0.05 |
 |---|---:|---:|---:|---:|
 | CE | **0.8678** | **0.5805** | **0.3858** | **0.2431** |
 | ArcFace | 0.6393 | 0.2936 | 0.1677 | 0.0976 |
@@ -110,78 +99,38 @@ Accuracy хорошо работает для закрытой классифи�
 | CE + ArcFace | 0.7172 | 0.3668 | 0.2127 | 0.1282 |
 | ArcFace + Triplet | 0.7192 | 0.3587 | 0.1991 | 0.1112 |
 
-Вывод: в данном эксперименте CE оказался наиболее стабильным на unseen identity. Triplet Loss занял второе место, а ArcFace, вероятно, требовал большего числа identity и более масштабного обучения.
-
----
-
-## Основные ML-инсайты
-
-### CrossEntropy может быть сильным baseline
-
-Хотя CE формально обучает классификатор по фиксированным identity, embedding backbone после такого обучения дал лучший результат на Identification Rate. Это важный baseline, который нельзя пропускать.
-
-### ArcFace чувствителен к масштабу данных
-
-ArcFace обычно силён в face recognition, но на ограниченном количестве identity может не раскрыться. В этом проекте он показал худший результат среди одиночных loss-функций.
-
-### Triplet Loss лучше отражает задачу similarity search
-
-Triplet Loss показал хорошее разделение лиц на внешних примерах: в top-k похожих пар вошли все 7/7 настоящих совпадений. Однако по строгому TPR@FPR он уступил CE.
-
-### Accuracy недостаточно для face recognition
-
-Для открытого множества людей нужна отдельная проверка на unseen identities. Поэтому Identification Rate / TPR@FPR важнее простой accuracy на validation split.
-
-### End-to-end качество зависит от alignment
-
-Ошибки на этапе landmarks и выравнивания напрямую портят embedding. Поэтому landmark detector — не декоративный этап, а важная часть pipeline.
-
----
-
-## Сравнение open-source библиотек
-
-Дополнительно протестированы библиотеки:
-
-| Library | Результат |
-|---|---|
-| DeepFace | стабильно работает в Colab, поддерживает разные модели и backend |
-| InsightFace | сильная библиотека для production/research face recognition, корректно работает через ONNX/GPU |
-| face_recognition | проблемная совместимость с Colab из-за `dlib`, не рекомендована для этого окружения |
-
-Ключевой файл:
-
-- `notebooks/5_BiblioTest_Clean.ipynb`
-
----
+![Retrieval](assets/readme/retrieval_examples.png)
 
 ## Структура репозитория
 
 ```text
-face_recognition_portfolio/
-├── assets/                         # графики и визуализации из ноутбуков
-├── configs/                        # место для yaml/json конфигов экспериментов
-├── notebooks/                      # исходные clean notebooks
-├── scripts/
-│   ├── train_hourglass.py          # entrypoint для landmark detector
-│   ├── train_classifier.py         # entrypoint для classifier/embedding моделей
-│   └── evaluate_ir.py              # сохраненные результаты IR metric
-├── src/
-│   └── face_recognition/
-│       ├── alignment.py            # heatmaps -> landmarks -> aligned face
-│       ├── datasets.py             # датасеты и transforms
-│       ├── losses.py               # ArcFace, Triplet, hybrid losses
-│       ├── metrics.py              # cosine similarity, embeddings, IR metric
-│       ├── models/
-│       │   ├── embedding.py        # ResNet embedding/classifier модели
-│       │   └── hourglass.py        # Stacked Hourglass Network
-│       └── utils/
-│           └── visualization.py    # визуализация лиц и метрик
+.
+├── README.md
 ├── requirements.txt
 ├── pyproject.toml
-└── README.md
+├── .gitignore
+├── notebooks/
+│   └── legacy/                 # исходные исследовательские ноутбуки
+├── src/face_recognition/
+│   ├── alignment.py
+│   ├── datasets.py
+│   ├── losses.py
+│   ├── metrics.py
+│   ├── models/
+│   │   ├── embedding.py
+│   │   └── hourglass.py
+│   └── utils/visualization.py
+├── scripts/
+│   ├── train_hourglass.py
+│   ├── train_classifier.py
+│   └── evaluate_ir.py
+├── assets/
+│   ├── readme/                 # отобранные изображения для README
+│   └── notebook_exports/        # остальные экспортированные графики
+├── data/                       # только README/.gitkeep в git
+├── checkpoints/                # только README/.gitkeep в git
+└── docs/
 ```
-
----
 
 ## Как запустить
 
@@ -192,83 +141,59 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-Проверить сохраненные результаты IR metric:
+Посмотреть сохраненную IR-таблицу:
 
 ```bash
 python scripts/evaluate_ir.py
 ```
 
-Запустить skeleton для модели landmarks:
+Обучить Stacked Hourglass landmark detector на CSV-разметке:
 
 ```bash
-python scripts/train_hourglass.py --checkpoint-out hourglass_best.pth
+python scripts/train_hourglass.py \
+  --images-dir data/raw/img_align_celeba \
+  --annotations data/raw/landmarks.csv \
+  --epochs 20 \
+  --checkpoint-out checkpoints/hourglass_best.pth
 ```
 
-Запустить skeleton для classifier-модели:
+Обучить классификатор лиц:
 
 ```bash
-python scripts/train_classifier.py --data-dir path/to/aligned_classifier_train_500
+python scripts/train_classifier.py \
+  --data-dir data/aligned/train \
+  --val-dir data/aligned/val \
+  --loss ce \
+  --epochs 30 \
+  --output-dir checkpoints
 ```
 
-Данные CelebA и веса моделей не включены в репозиторий, потому что они тяжелые и должны храниться отдельно в `data/`, `datasets/` или `checkpoints/`.
+Обучить Triplet-модель:
 
----
+```bash
+python scripts/train_classifier.py \
+  --data-dir data/aligned/train \
+  --val-dir data/aligned/val \
+  --loss triplet \
+  --epochs 30 \
+  --output-dir checkpoints
+```
 
-## Используемые технологии
+Посчитать Identification Rate для checkpoint:
 
-- Python
-- PyTorch
-- Torchvision
-- OpenCV
-- NumPy
-- Pandas
-- Matplotlib
-- CelebA
-- Stacked Hourglass Network
-- ResNet backbone
-- CrossEntropy Loss
-- ArcFace Loss
-- Triplet Loss
-- Cosine Similarity
-- TPR@FPR / Identification Rate
-- DeepFace
-- InsightFace
+```bash
+python scripts/evaluate_ir.py \
+  --checkpoint checkpoints/best_triplet.pth \
+  --query-dir data/eval/query \
+  --distractor-dir data/eval/distractors
+```
 
----
+## Что можно улучшить
 
-## STAR
+- Добавить единый конфиг экспериментов и логирование в CSV/MLflow/W&B.
+- Вынести подготовку CelebA и alignment в отдельный reproducible script.
+- Добавить hard negative mining для Triplet Loss.
+- Проверить ArcFace на большем числе identity и более длинном обучении.
+- Добавить тесты для alignment, метрик и загрузчиков данных.
+- Сохранить легкие demo-assets вместо полных notebook outputs.
 
-### Situation
-
-Face recognition pipeline состоит из нескольких зависимых этапов: детекция лица, локализация ключевых точек, выравнивание, построение embedding-вектора и сравнение лиц. Ошибка на любом этапе ухудшает итоговое качество.
-
-Кроме того, обычная validation accuracy не показывает, как модель работает на новых людях, которых не было в обучении.
-
-### Task
-
-Нужно было реализовать полный pipeline распознавания лиц без использования моделей, заранее обученных на face recognition:
-
-- обучить landmark detector;
-- реализовать face alignment;
-- обучить модели распознавания лиц с CE и ArcFace;
-- дополнительно проверить Triplet Loss и гибридные loss-функции;
-- собрать inference pipeline;
-- реализовать Identification Rate Metric;
-- сравнить результат с open-source библиотеками.
-
-### Action
-
-Была реализована Stacked Hourglass Network для 5 landmarks, подготовлены aligned face datasets, обучены embedding/classification модели на CE, ArcFace, Triplet и гибридных loss-функциях.
-
-Для честной оценки были сформированы отдельные query/distractor наборы из identity, отсутствующих в train/val. Затем реализован расчет TPR@FPR по cosine similarities.
-
-### Result
-
-Лучшей моделью по Identification Rate стала CE-модель:
-
-- TPR@FPR=0.50: **0.8678**
-- TPR@FPR=0.20: **0.5805**
-- TPR@FPR=0.10: **0.3858**
-- TPR@FPR=0.05: **0.2431**
-
-Triplet Loss показал сильное поведение на similarity-парах, но уступил CE по строгой IR-метрике. ArcFace оказался чувствителен к масштабу данных и в текущем сетапе не превзошел baseline.
