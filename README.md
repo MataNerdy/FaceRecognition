@@ -110,7 +110,8 @@ Identification Rate / TPR@FPR:
 ├── pyproject.toml
 ├── .gitignore
 ├── notebooks/
-│   └── legacy/                 # исходные исследовательские ноутбуки
+│   ├── *_Clean.ipynb           # очищенные исследовательские ноутбуки
+│   └── legacy/                 # дополнительные исходные эксперименты
 ├── src/face_recognition/
 │   ├── alignment.py
 │   ├── datasets.py
@@ -129,8 +130,7 @@ Identification Rate / TPR@FPR:
 │   ├── prepare_ir_split.py
 │   └── evaluate_ir.py
 ├── assets/
-│   ├── readme/                 # отобранные изображения для README
-│   └── notebook_exports/        # остальные экспортированные графики
+│   └── readme/                 # отобранные изображения для README
 ├── data/                       # только README/.gitkeep в git
 ├── checkpoints/                # только README/.gitkeep в git
 └── docs/
@@ -152,6 +152,15 @@ pip install -e .
 
 ```bash
 pip install -r requirements-research.txt
+```
+
+Для локальных проверок кода:
+
+```bash
+pip install -r requirements-dev.txt
+ruff check src scripts tests
+pyflakes src scripts tests
+pytest -q
 ```
 
 Посмотреть сохраненную IR-таблицу:

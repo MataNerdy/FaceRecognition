@@ -1,0 +1,7 @@
+# Developer tooling for local checks.
+# Core runtime dependencies live in requirements.txt.
+
+-r requirements.txt
+
+ruff==0.6.9
+pyflakes==3.2.0

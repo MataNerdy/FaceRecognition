@@ -6,6 +6,8 @@ __pycache__/
 .ruff_cache/
 .venv/
 venv/
+*.egg-info/
+.vscode/
 
 # Jupyter / OS
 .ipynb_checkpoints/
@@ -34,4 +36,5 @@ runs/
 outputs/
 wandb/
 mlruns/
-
+assets/notebook_exports/
+assets/legacy_root_images/

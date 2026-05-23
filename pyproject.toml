@@ -20,6 +20,13 @@ dependencies = [
     "facenet-pytorch==2.5.3",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest==8.2.2",
+    "ruff==0.6.9",
+    "pyflakes==3.2.0",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
