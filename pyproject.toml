@@ -1,0 +1,9 @@
+[project]
+name = "face-recognition-pipeline"
+version = "0.1.0"
+description = "Face recognition pipeline with Stacked Hourglass landmarks, CE/ArcFace/Triplet training and Identification Rate evaluation"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
