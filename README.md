@@ -10,7 +10,10 @@
 
 Все embedding-модели обучались самостоятельно под задачу face recognition.
 
-![Pipeline](assets/readme/pipeline_landmarks.png)
+![Original](assets/readme/pipeline_1.png)
+![Heatmaps](assets/readme/pipeline_2.png)
+![Face Alignment](assets/readme/pipeline_3.png)
+![The most similar pairs](assets/readme/pipeline_4.png)
 
 ## Situation
 
@@ -54,6 +57,8 @@
 - левый угол рта;
 - правый угол рта.
 
+![Heatmaps](assets/readme/original_heatmap.png)
+
 **Ключевая проблема: CelebA already aligned**
 
 Если обучать landmark detector напрямую на исходном CelebA, модель быстро переучивается на идеально выровненные лица и плохо переносится на реальные фотографии.
@@ -68,7 +73,7 @@
 
 Это позволило приблизить train distribution к реальным изображениям и значительно улучшило устойчивость модели.
 
-![Alignment](assets/readme/alignment_examples.png)
+![Alignment](assets/readme/preprocess_heatmap.png)
 
 Для обучения:
 
@@ -110,6 +115,8 @@
 - использовался similarity/affine transform;
 - применялся шаблон 5 ключевых точек из InsightFace;
 - выполнялось нормализованное приведение лиц к размеру 112×112.
+
+![Alignment](assets/readme/predicted_heatmap.png)
 
 Ключевая идея проекта:
 
@@ -199,6 +206,9 @@ ArcFace обучался стабильнее и формировал более
 
 Triplet Loss оказался лучшим по closed-set classification accuracy и продемонстрировал наиболее качественную separability embedding space.
 
+![Loss curves](assets/readme/CE_Arcface_triplet_loss.png)
+![Accuracy curves](assets/readme/CE_Arcface_triplet_acc.png)
+
 ### Hybrid Losses
 
 Дополнительно исследовались смешанные loss-функции:
@@ -276,8 +286,6 @@ Pipeline поддерживает:
 | CE + ArcFace | 0.7172 | 0.3668 | 0.2127 | 0.1282 |
 | ArcFace + Triplet | 0.7192 | 0.3587 | 0.1991 | 0.1112 |
 
-![Identification Rate](assets/readme/identification_rate.png)
-
 ### Главный вывод экспериментов
 
 Интересный результат экспериментов:
@@ -304,7 +312,10 @@ Triplet лучше структурировал embedding-space внутри о�
 
 Triplet Loss продемонстрировал наиболее выраженную блочную структуру similarity matrix и корректно находил все пары одинаковых лиц на тестовых изображениях.
 
+![Triplet Loss: cosine similarity analysis](assets/readme/triplet_l2_matrix.png)
+
 ### Основные ML-инсайты
+
 - Alignment quality напрямую влияет на separability embedding space.
 - CelebA already aligned → без сильных аугментаций landmark detector плохо переносится на реальные фото.
 - Validation accuracy недостаточна для оценки face recognition pipeline.
@@ -375,7 +386,6 @@ raw image
 | Triplet Loss | metric learning: anchor ближе к positive, дальше от negative |
 | ArcFace + Triplet | комбинированный эксперимент margin-based и metric learning |
 
-![Training Curves](assets/readme/training_curves.png)
 
 ## Метрики
 
@@ -409,7 +419,7 @@ Identification Rate / TPR@FPR:
 | CE + ArcFace | 0.7172 | 0.3668 | 0.2127 | 0.1282 |
 | ArcFace + Triplet | 0.7192 | 0.3587 | 0.1991 | 0.1112 |
 
-![Retrieval](assets/readme/retrieval_examples.png)
+![Identification Rate](assets/readme/identification_rate.png)
 
 ## Структура репозитория
 
