@@ -6,7 +6,7 @@ hardcoded to Colab or Google Drive.
 """
 
 from __future__ import annotations
-
+import torch
 import argparse
 import csv
 import sys
@@ -26,7 +26,7 @@ try:
     from torchvision import transforms
     from tqdm import tqdm
 
-    from face_recognition.models.hourglass import StackedHourglassNet
+    from src.face_recognition.models.hourglass import StackedHourglassNet
 except ModuleNotFoundError as exc:  # Allows importing the script without ML dependencies installed.
     np = None
     torch = None
@@ -94,7 +94,7 @@ class LandmarkHeatmapDataset(Dataset):
         landmarks[:, 1] *= self.heatmap_size / height
         return self.transform(image), self._to_heatmaps(landmarks)
 
-    def _to_heatmaps(self, landmarks: np.ndarray) -> torch.Tensor:
+    def _to_heatmaps(self, landmarks):
         yy, xx = np.meshgrid(np.arange(self.heatmap_size), np.arange(self.heatmap_size), indexing="ij")
         maps = [np.exp(-((xx - x) ** 2 + (yy - y) ** 2) / (2 * self.sigma**2)) for x, y in landmarks]
         return torch.tensor(np.stack(maps), dtype=torch.float32)
@@ -176,4 +176,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

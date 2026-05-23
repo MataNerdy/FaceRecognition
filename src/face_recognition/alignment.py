@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 try:
     import cv2
 except ModuleNotFoundError:  # pragma: no cover - exercised only in minimal envs
@@ -26,7 +25,7 @@ REFERENCE_5PTS = np.array(
 )
 
 
-def heatmaps_to_landmarks(heatmaps: torch.Tensor | np.ndarray, image_size: int | tuple[int, int] = 256) -> np.ndarray:
+def heatmaps_to_landmarks(heatmaps, image_size: int | tuple[int, int] = 256) -> np.ndarray:
     """Convert landmark heatmaps with shape `[K, H, W]` to image coordinates."""
     if torch is not None and isinstance(heatmaps, torch.Tensor):
         heatmaps = heatmaps.detach().cpu().numpy()

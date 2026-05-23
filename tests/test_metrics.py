@@ -1,6 +1,6 @@
 import numpy as np
 
-from face_recognition.metrics import compute_ir
+from src.face_recognition.metrics import compute_ir
 
 
 def test_compute_ir_returns_expected_tpr_for_simple_embeddings():

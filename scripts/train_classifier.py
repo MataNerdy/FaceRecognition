@@ -18,10 +18,10 @@ try:
     from torchvision.datasets import ImageFolder
     from tqdm import tqdm
 
-    from face_recognition.datasets import TripletDatasetFromFolder, default_face_transform
-    from face_recognition.losses import ArcFaceCELoss, ArcFaceLoss, ArcFaceTripletLoss, TripletLoss
-    from face_recognition.metrics import triplet_accuracy
-    from face_recognition.models.embedding import EmbeddingNet, FaceClassifier
+    from src.face_recognition.datasets import TripletDatasetFromFolder, default_face_transform
+    from src.face_recognition.losses import ArcFaceCELoss, ArcFaceLoss, ArcFaceTripletLoss, TripletLoss
+    from src.face_recognition.metrics import triplet_accuracy
+    from src.face_recognition.models.embedding import EmbeddingNet, FaceClassifier
 except ModuleNotFoundError as exc:  # Allows importing the script without ML dependencies installed.
     torch = None
     nn = None
@@ -212,4 +212,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

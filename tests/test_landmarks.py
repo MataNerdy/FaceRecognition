@@ -1,6 +1,6 @@
 import numpy as np
 
-from face_recognition.alignment import heatmaps_to_landmarks
+from src.face_recognition.alignment import heatmaps_to_landmarks
 
 
 def test_heatmaps_to_landmarks_scales_coordinates():

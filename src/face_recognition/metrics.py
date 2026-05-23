@@ -1,10 +1,7 @@
 """Embedding and verification-style metrics for face recognition."""
 
 from __future__ import annotations
-
 import itertools
-from typing import Iterable
-
 import numpy as np
 
 try:
@@ -21,7 +18,7 @@ def _unpack_batch(batch):
     return batch[:2]
 
 
-def compute_embeddings(model: torch.nn.Module, dataloader: Iterable, device: torch.device | str) -> tuple[np.ndarray, np.ndarray]:
+def compute_embeddings(model, dataloader, device) -> tuple[np.ndarray, np.ndarray]:
     """Compute L2-normalized embeddings and labels for a dataloader."""
     if torch is None or F is None:
         raise ModuleNotFoundError("torch is required to compute model embeddings")
@@ -90,7 +87,7 @@ def compute_ir(
     return results
 
 
-def triplet_accuracy(anchor: torch.Tensor, positive: torch.Tensor, negative: torch.Tensor, margin: float = 0.3) -> float:
+def triplet_accuracy(anchor, positive, negative, margin: float = 0.3) -> float:
     """Return the share of triplets where positive is closer than negative by margin."""
     if torch is None:
         raise ModuleNotFoundError("torch is required to compute triplet accuracy")

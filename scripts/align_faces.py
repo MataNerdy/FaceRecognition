@@ -15,7 +15,7 @@ if str(SRC) not in sys.path:
 try:
     from PIL import Image
 
-    from face_recognition.pipeline import align_with_landmarks, list_images, load_landmark_model, predict_landmarks, save_aligned_face
+    from src.face_recognition.pipeline import align_with_landmarks, list_images, load_landmark_model, predict_landmarks, save_aligned_face
 except ModuleNotFoundError as exc:
     _IMPORT_ERROR = exc
 else:

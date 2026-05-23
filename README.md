@@ -110,8 +110,7 @@ Identification Rate / TPR@FPR:
 ├── pyproject.toml
 ├── .gitignore
 ├── notebooks/
-│   ├── *_Clean.ipynb           # очищенные исследовательские ноутбуки
-│   └── legacy/                 # дополнительные исходные эксперименты
+│   └── legacy/                 # исходные исследовательские ноутбуки
 ├── src/face_recognition/
 │   ├── alignment.py
 │   ├── datasets.py
@@ -130,7 +129,8 @@ Identification Rate / TPR@FPR:
 │   ├── prepare_ir_split.py
 │   └── evaluate_ir.py
 ├── assets/
-│   └── readme/                 # отобранные изображения для README
+│   ├── readme/                 # отобранные изображения для README
+│   └── notebook_exports/        # остальные экспортированные графики
 ├── data/                       # только README/.gitkeep в git
 ├── checkpoints/                # только README/.gitkeep в git
 └── docs/
@@ -152,15 +152,6 @@ pip install -e .
 
 ```bash
 pip install -r requirements-research.txt
-```
-
-Для локальных проверок кода:
-
-```bash
-pip install -r requirements-dev.txt
-ruff check src scripts tests
-pyflakes src scripts tests
-pytest -q
 ```
 
 Посмотреть сохраненную IR-таблицу:
@@ -219,11 +210,11 @@ python scripts/evaluate_ir.py \
 | Notebook | Что покрыто в репозитории | Что осталось notebook-only |
 |---|---|---|
 | `1_StackedHourGlassNetwork_Clean.ipynb` | Stacked Hourglass, landmark extraction, alignment, training CLI | подробные аугментационные эксперименты и визуальный анализ |
-| `2_AllModels_Clean (1).ipynb` | CE, ArcFace, Hybrid, Triplet, ArcFace+Triplet losses и classifier training CLI | t-SNE, confusion matrix и расширенные графики обучения |
+| `2_AllModels_Clean.ipynb` | CE, ArcFace, Hybrid, Triplet, ArcFace+Triplet losses и classifier training CLI | t-SNE, confusion matrix и расширенные графики обучения |
 | `3_FaceRecognitionPipeline_Clean.ipynb` | `pipeline.py`, batch/full inference CLI, cosine/nearest search | ручная демонстрация на отдельных фото |
 | `4_Identification_Rate_Metric_Clean.ipynb` | `compute_ir`, `evaluate_ir.py`, `prepare_ir_split.py` | подробная пошаговая сборка query/distractor из Colab |
 | `5_BiblioTest_Clean.ipynb` | краткое описание external baselines в docs | код запуска DeepFace/InsightFace/dlib |
-| `README (1).ipynb` | STAR README и ключевые результаты | старые Google Drive ссылки и base64-outputs |
+| `README.ipynb` | STAR README и ключевые результаты | старые Google Drive ссылки и base64-outputs |
 
 ## Что можно улучшить
 

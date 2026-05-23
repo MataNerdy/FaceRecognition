@@ -8,15 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-SRC = ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
-
-
 
 EXPERIMENT_RESULTS = {
     "CE": {0.50: {"tpr": 0.8678, "threshold": 0.9655}, 0.20: {"tpr": 0.5805, "threshold": 0.9782}, 0.10: {"tpr": 0.3858, "threshold": 0.9835}, 0.05: {"tpr": 0.2431, "threshold": 0.9871}},
@@ -45,7 +37,7 @@ def load_embedding_model(checkpoint: Path, embedding_dim: int, device: str):
     """Load an EmbeddingNet from a checkpoint."""
     import torch
 
-    from face_recognition.models.embedding import EmbeddingNet
+    from src.face_recognition.models.embedding import EmbeddingNet
 
     model = EmbeddingNet(embedding_dim=embedding_dim, pretrained=False).to(device)
     payload = torch.load(checkpoint, map_location=device)
@@ -66,8 +58,8 @@ def main() -> None:
     from torch.utils.data import DataLoader
     from torchvision.datasets import ImageFolder
 
-    from face_recognition.datasets import default_face_transform
-    from face_recognition.metrics import compute_embeddings, compute_ir
+    from src.face_recognition.datasets import default_face_transform
+    from src.face_recognition.metrics import compute_embeddings, compute_ir
 
     device = "cuda" if args.device == "auto" and torch.cuda.is_available() else ("cpu" if args.device == "auto" else args.device)
     transform = default_face_transform(args.image_size)

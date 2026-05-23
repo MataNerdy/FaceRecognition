@@ -14,7 +14,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 try:
-    from face_recognition.pipeline import (
+    from src.face_recognition.pipeline import (
         FaceRecognitionPipeline,
         list_images,
         load_face_model,

@@ -1,6 +1,6 @@
 import numpy as np
 
-from face_recognition.alignment import align_face, reference_landmarks
+from src.face_recognition.alignment import align_face, reference_landmarks
 
 
 def test_align_face_returns_expected_shape():
